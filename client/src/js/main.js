@@ -34,12 +34,12 @@ function init() {
         requestAnimationFrame(animate);
         tick += 0.1;
 
-        bunny.root_y += 1;
+        bunny.root_y += 0.6;
 
         // just for fun, let's rotate mr rabbit a little
         bunny.rotation = Math.cos(tick) / 4;
         bunny.position.x = 200 + 10 * Math.cos(tick);
-        bunny.position.y = bunny.root_y + 10 * Math.cos(2 * tick);
+        bunny.position.y = bunny.root_y + 7 * Math.cos(2 * tick);
         bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
 
         // render the container
