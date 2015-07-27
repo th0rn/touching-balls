@@ -1,4 +1,7 @@
 
+var PIXI = require("pixi");
+require('../css/style.css');
+
 function init() {
     var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
     document.getElementById("game-div").appendChild(renderer.view);
@@ -7,7 +10,7 @@ function init() {
     var stage = new PIXI.Container();
 
     // create a texture from an image path
-    var texture = PIXI.Texture.fromImage('https://raw.githubusercontent.com/pixijs/examples/gh-pages/_assets/bunny.png');
+    var texture = PIXI.Texture.fromImage('/assets/bunny.png');
 
     // create a new Sprite using the texture
     bunny = new PIXI.Sprite(texture);
@@ -44,6 +47,5 @@ function init() {
     }
 
 }
-
 
 document.addEventListener("DOMContentLoaded", init);
