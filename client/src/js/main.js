@@ -1,5 +1,6 @@
 
 var PIXI = require("pixi");
+var ASSETS = require("./assets.js");
 require('../css/style.css');
 
 function init() {
@@ -10,7 +11,7 @@ function init() {
     var stage = new PIXI.Container();
 
     // create a texture from an image path
-    var texture = PIXI.Texture.fromImage('/assets/bunny.png');
+    var texture = PIXI.Texture.fromImage(ASSETS.bunny);
 
     // create a new Sprite using the texture
     bunny = new PIXI.Sprite(texture);

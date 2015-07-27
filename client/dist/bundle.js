@@ -46,7 +46,8 @@
 
 	
 	var PIXI = __webpack_require__(1);
-	__webpack_require__(2);
+	var ASSETS = __webpack_require__(2);
+	__webpack_require__(3);
 
 	function init() {
 	    var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
@@ -56,7 +57,7 @@
 	    var stage = new PIXI.Container();
 
 	    // create a texture from an image path
-	    var texture = PIXI.Texture.fromImage('/assets/bunny.png');
+	    var texture = PIXI.Texture.fromImage(ASSETS.bunny);
 
 	    // create a new Sprite using the texture
 	    bunny = new PIXI.Sprite(texture);
@@ -105,15 +106,24 @@
 
 /***/ },
 /* 2 */
+/***/ function(module, exports) {
+
+	
+	var PREFIX = document.location.host.includes("github") ? "client/dist/" : "";
+	exports.bunny = PREFIX + 'assets/bunny.png';
+
+
+/***/ },
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(3);
+	var content = __webpack_require__(4);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(5)(content, {});
+	var update = __webpack_require__(6)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -130,10 +140,10 @@
 	}
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(4)();
+	exports = module.exports = __webpack_require__(5)();
 	// imports
 
 
@@ -144,7 +154,7 @@
 
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports) {
 
 	/*
@@ -200,7 +210,7 @@
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
