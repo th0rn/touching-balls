@@ -6,4 +6,4 @@
 - `DC:` for documentation only changes
 - `RF:` for code refactoring
 - `ST:` for code style changes
-- `CH:' for changes to auxillary/build tools
+- `CH:` for changes to auxiliary/build tools
