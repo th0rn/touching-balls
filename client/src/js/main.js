@@ -22,7 +22,7 @@ function init() {
 
     // move the sprite to the center of the screen
     bunny.position.x = 200;
-    bunny.root_y = 200;
+    bunny.position.y = 200;
 
     stage.addChild(bunny);
 
@@ -38,12 +38,29 @@ function init() {
         state = msg;
     });
 
+    // Totally arbitrary. Bunny's velocity will be proportional to distance
+    // from point. Play with this and see.
+    var speed = 0.04;
+
     function animate() {
         requestAnimationFrame(animate);
 
+        var target_x = 200 + 400 * state.x;
+        var target_y = 200 + 400 * state.y;
+
         // A closure around the 'state', which reflects the last message
-        bunny.position.x = 200 + 100 * state.x;
-        bunny.position.y = 200 + 100 * state.y;
+        // The first several updates are all garbage for some reason, so we
+        // just keep Mr. Bunny still until the world stabilizes
+        if (isFinite(bunny.position.x)) {
+            bunny.position.x += (target_x - bunny.position.x) * speed;
+        } else {
+            bunny.position.x = 200;
+        }
+        if (isFinite(bunny.position.y)) {
+            bunny.position.y += (target_y - bunny.position.y) * speed;
+        } else {
+            bunny.position.y = 200;
+        }
 
         // render the container
         renderer.render(stage);
