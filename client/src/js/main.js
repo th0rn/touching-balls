@@ -26,10 +26,10 @@ function init() {
 
     stage.addChild(bunny);
 
+    var tick = 0;
+
     // start animating
     animate();
-
-    var tick = 0;
 
     function animate() {
         requestAnimationFrame(animate);
@@ -37,10 +37,11 @@ function init() {
 
         bunny.root_y += 0.6;
 
-        // just for fun, let's rotate mr rabbit a little
+        // "Walk" down the screen
         bunny.rotation = Math.cos(tick) / 4;
         bunny.position.x = 200 + 10 * Math.cos(tick);
         bunny.position.y = bunny.root_y + 7 * Math.cos(2 * tick);
+        // Wrap the y-axis
         bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
 
         // render the container
