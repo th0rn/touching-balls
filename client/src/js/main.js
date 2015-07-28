@@ -26,28 +26,32 @@ function init() {
 
     stage.addChild(bunny);
 
+    // Maintain a single persistent connection
+    var namespace = '/test';
+    var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
+
+    // The initial state, before receiving first message.
+    var state = {x: 0, y: 0};
+
+    socket.on('response', function(msg) {
+        // Derive new state from the message somehow or another
+        state = msg;
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // A closure around the 'state', which reflects the last message
+        bunny.position.x = 200 + 100 * state.x;
+        bunny.position.y = 200 + 100 * state.y;
+
+        // render the container
+        renderer.render(stage);
+    }
+
     // start animating
     animate();
 
-    // var tick = 0;
-
-    function animate() {
-        namespace = '/test';
-        var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
-        socket.on('response', function(msg) {
-            requestAnimationFrame(animate);
-            // tick += 0.1;
-
-            // bunny.root_y += 0.6;
-
-            bunny.position.x = 200 + 100 * msg.x;
-            bunny.position.y = 200 + 100 * msg.y;
-            // bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
-
-            // render the container
-            renderer.render(stage);
-            });
-    }
 
 }
 
