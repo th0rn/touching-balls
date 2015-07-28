@@ -12,31 +12,68 @@ from flask import Flask
 from flask import render_template
 from flask.ext.socketio import SocketIO
 from flask.ext.socketio import emit
+from flask.ext.socketio import disconnect
+import time
+from threading import Thread
 
+from demo import Demo
+
+# TODO: Move to settings
+HOST = 'localhost'
 
 app = Flask(__name__)
+# TODO: Get from settings
+app.debug = True
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
+thread = None
+
+
+def background_thread():
+    """Demo ball."""
+    ball = Demo()
+    while True:
+        time.sleep(0.01)
+        ball.move()
+        data = 'Player "%s" (%s) moved to %s.' % (ball.nick, ball.color,
+                                                  ball.short_coords())
+        socketio.emit('response',
+                      {
+                          'data': data,
+                          # 'count': count,
+                      },
+                      namespace='/test')
 
 
 @app.route('/')
 def index():
+    global thread
+    if thread is None:
+        thread = Thread(target=background_thread)
+        thread.start()
     return render_template('index.html')
 
 
 @socketio.on('event', namespace='/test')
 def test_message(message):
-    emit('my response', {'data': message['data']})
+    emit('response', {'data': message['data']})
 
 
 @socketio.on('broadcast event', namespace='/test')
 def test_broadcast(message):
-    emit('my response', {'data': message['data']}, broadcast=True)
+    emit('response', {'data': message['data']}, broadcast=True)
 
 
 @socketio.on('connect', namespace='/test')
 def test_connect():
-    emit('my response', {'data': 'Connected'})
+    emit('response', {'data': 'Connected'})
+
+
+@socketio.on('disconnect request', namespace='/test')
+def disconnect_request():
+    emit('my response',
+         {'data': 'Disconnected!', })
+    disconnect()
 
 
 @socketio.on('disconnect', namespace='/test')
@@ -45,4 +82,4 @@ def test_disconnect():
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0')
+    socketio.run(app, host=HOST)

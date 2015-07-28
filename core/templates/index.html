@@ -15,8 +15,9 @@
 
         // event handler for server sent data
         // the data is displayed in the "Received" section of the page
-        socket.on('my response', function(msg) {
-            $('#log').append('<br>Received: ' + msg.data);
+        socket.on('response', function(msg) {
+            $('#log').prepend('<br>Received: ' + msg.data);
+            <!-- $('#log').append('<br>Received: ' + msg.data + ' #' + msg.count); -->
         });
 
         // handlers for the different forms in the page
@@ -38,7 +39,7 @@
             return false;
         });
         $('form#send_room').submit(function(event) {
-            socket.emit('my room event', {room: $('#room_name').val(), data: $('#room_data').val()});
+            socket.emit('room event', {room: $('#room_name').val(), data: $('#room_data').val()});
             return false;
         });
         $('form#close').submit(function(event) {
