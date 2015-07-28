@@ -3,8 +3,15 @@ var PIXI = require("pixi");
 var ASSETS = require("./assets.js");
 require('../css/style.css');
 
+var width = 800;
+var height = 600;
+
+function clamp(x, low, high) {
+    return Math.max(low, Math.min(x, high));
+}
+
 function init() {
-    var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
+    var renderer = PIXI.autoDetectRenderer(width, height,{backgroundColor : 0x1099bb});
     document.getElementById("game-div").appendChild(renderer.view);
 
     // create the root of the scene graph
@@ -15,51 +22,61 @@ function init() {
 
     // create a new Sprite using the texture
     bunny = new PIXI.Sprite(texture);
-
-    // center the sprite's anchor point
-    bunny.anchor.x = 0.5;
-    bunny.anchor.y = 0.5;
+    target = new PIXI.Sprite(texture);
 
     // move the sprite to the center of the screen
-    bunny.position.x = 200;
-    bunny.position.y = 200;
+    bunny.position.x = width / 2;
+    bunny.position.y = height / 2;
 
     stage.addChild(bunny);
+    stage.addChild(target);
 
     // Maintain a single persistent connection
     var namespace = '/test';
     var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
 
     // The initial state, before receiving first message.
-    var state = {x: 0, y: 0};
+    var state = {x: 0.5, y: 0.5};
 
     socket.on('response', function(msg) {
         // Derive new state from the message somehow or another
-        state = msg;
+        state = {
+            x: Math.min(Math.max(0, (msg.x + 1) * 0.5), 1),
+            y: Math.min(Math.max(0, (msg.y + 1) * 0.5), 1),
+        };
     });
 
-    // Totally arbitrary. Bunny's velocity will be proportional to distance
-    // from point. Play with this and see.
-    var speed = 0.04;
+    var maxVel = 5;
+    var acc_factor = 3;
+    var x_vel = 0;
+    var y_vel = 0;
+    var target_x = state.x;
+    var target_y = state.y;
 
     function animate() {
         requestAnimationFrame(animate);
+        if (!isFinite(state.x) || !isFinite(state.y)) {
+            return;
+        }
 
-        var target_x = 200 + 400 * state.x;
-        var target_y = 200 + 400 * state.y;
+        target_x = state.x;
+        var x_acc = target_x - bunny.position.x / width;
+        x_vel = clamp(x_vel + x_acc * acc_factor, -maxVel, maxVel);
+
+        target_y = state.y;
+        var y_acc = target_y - bunny.position.y / height;
+        y_vel = clamp(y_vel + y_acc * acc_factor, -maxVel, maxVel);
 
         // A closure around the 'state', which reflects the last message
         // The first several updates are all garbage for some reason, so we
         // just keep Mr. Bunny still until the world stabilizes
-        if (isFinite(bunny.position.x)) {
-            bunny.position.x += (target_x - bunny.position.x) * speed;
-        } else {
-            bunny.position.x = 200;
+        if (isFinite(state.x)) {
+            bunny.position.x += x_vel;
+            target.position.x = state.x * width;
         }
-        if (isFinite(bunny.position.y)) {
-            bunny.position.y += (target_y - bunny.position.y) * speed;
-        } else {
-            bunny.position.y = 200;
+        if (isFinite(state.y)) {
+            bunny.position.y += y_vel;
+            target.position.y = state.y * height;
         }
 
         // render the container
@@ -68,7 +85,6 @@ function init() {
 
     // start animating
     animate();
-
 
 }
 
