@@ -33,13 +33,16 @@ def background_thread():
     """Demo ball."""
     ball = Demo()
     while True:
-        time.sleep(0.01)
+        time.sleep(1)
         ball.move()
         data = 'Player "%s" (%s) moved to %s.' % (ball.nick, ball.color,
                                                   ball.short_coords())
         socketio.emit('response',
                       {
-                          'data': data,
+                          # 'data': data,
+                          'nick': ball.nick,
+                          'x': ball.x,
+                          'y': ball.y,
                           # 'count': count,
                       },
                       namespace='/test')

@@ -22,29 +22,31 @@ function init() {
 
     // move the sprite to the center of the screen
     bunny.position.x = 200;
-    bunny.root_y = -30;
+    bunny.root_y = 200;
 
     stage.addChild(bunny);
 
     // start animating
     animate();
 
-    var tick = 0;
+    // var tick = 0;
 
     function animate() {
-        requestAnimationFrame(animate);
-        tick += 0.1;
+        namespace = '/test';
+        var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
+        socket.on('response', function(msg) {
+            requestAnimationFrame(animate);
+            // tick += 0.1;
 
-        bunny.root_y += 0.6;
+            // bunny.root_y += 0.6;
 
-        // just for fun, let's rotate mr rabbit a little
-        bunny.rotation = Math.cos(tick) / 4;
-        bunny.position.x = 200 + 10 * Math.cos(tick);
-        bunny.position.y = bunny.root_y + 7 * Math.cos(2 * tick);
-        bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
+            bunny.position.x = 200 + 100 * msg.x;
+            bunny.position.y = 200 + 100 * msg.y;
+            // bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
 
-        // render the container
-        renderer.render(stage);
+            // render the container
+            renderer.render(stage);
+            });
     }
 
 }
