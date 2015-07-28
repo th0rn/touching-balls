@@ -7,12 +7,12 @@
 
 ### Server-side
 
-- Websockets
-- Ball
-- Simulated ball movement (positions)
+- [x] Websockets
+- [x] Ball
+- [x] Simulated ball movement (positions)
 
 
 ### Client-side
 
-- Websockets
-- Rendering ball in position (canvas)
+- [x] Websockets
+- [ ] Rendering ball in position (canvas)
