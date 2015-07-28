@@ -1,0 +1,27 @@
+{
+  "name": "touching-balls",
+  "version": "1.0.0",
+  "description": "*An online multiplayer ball touching game*",
+  "main": "bundle.js",
+  "dependencies": {
+    "css-loader": "^0.15.6",
+    "style-loader": "^0.12.3",
+    "webpack": "^1.10.5"
+  },
+  "devDependencies": {
+    "webpack-dev-server": "^1.10.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/th0rn/touching-balls.git"
+  },
+  "author": "John Tyree",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/th0rn/touching-balls/issues"
+  },
+  "homepage": "https://github.com/th0rn/touching-balls"
+}
