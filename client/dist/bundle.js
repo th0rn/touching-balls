@@ -199,8 +199,8 @@
 
 	        // This is in absolute terms (pixels)
 	        var dist = Math.hypot(
-	            (bunny.unit_x - target.x) * width,
-	            (bunny.unit_y - target.y) * height
+	            (1 - bunny.unit_x) * width - target.x,
+	            (1 - bunny.unit_y) * height - target.y
 	        );
 	        if (dist < 10) {
 	            if (!onTarget) {
