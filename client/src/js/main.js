@@ -22,14 +22,13 @@ function init() {
     var stage = new PIXI.Container();
     stage.interactive = true;
 
-    // create a texture from an image path
-    var texture = PIXI.Texture.fromImage(ASSETS.bunny);
-
     // create a new Sprite using the texture
-    bunny = new PIXI.Sprite(texture);
+    bunny = new PIXI.Sprite.fromImage(ASSETS.bunny);
     bunny.anchor.x = 0.25;
     bunny.anchor.y = 0.25;
-    target = new PIXI.Sprite(texture);
+    target = new PIXI.Sprite.fromImage(ASSETS.carrot);
+    target.scale.x = 1.5;
+    target.scale.y = 1.5;
     target.anchor.x = 0.5;
     target.anchor.y = 0.5;
 
