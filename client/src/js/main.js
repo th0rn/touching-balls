@@ -53,6 +53,9 @@ function init() {
     var target_x = state.x;
     var target_y = state.y;
 
+    var then = Date.now();
+    var tick = 0;
+
     function animate() {
         requestAnimationFrame(animate);
         if (!isFinite(state.x) || !isFinite(state.y)) {
@@ -81,6 +84,14 @@ function init() {
 
         // render the container
         renderer.render(stage);
+        now = Date.now();
+        if (now - then > 5000) {
+            var fps = tick / (now - then) * 1000;
+            console.log(Math.round(fps, 0).toString() + " FPS");
+            then = now;
+            tick = -1;
+        }
+        tick += 1;
     }
 
     // start animating
