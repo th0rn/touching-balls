@@ -104,8 +104,10 @@ function init() {
         // The first several updates are all garbage for some reason, so we
         // just keep Mr. Bunny still until the world stabilizes
         if (isFinite(state.x)) {
-            // Actually update position now
             bunny.unit_x += x_vel;
+            // Actually update position now, make sure to transform back to
+            // screen coordinates and remember the y-axis is flipped!
+            // [(0, 0), (1, 1)] -> [(width, height), (0, 0)]
             bunny.x = bunny.unit_x * width;
             target.x = state.x * width;
         }
