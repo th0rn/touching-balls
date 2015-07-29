@@ -49,49 +49,181 @@
 	var ASSETS = __webpack_require__(2);
 	__webpack_require__(3);
 
+	var width = 800;
+	var height = 600;
+
+	function clamp(x, low, high) {
+	    return Math.max(low, Math.min(x, high));
+	}
+
 	function init() {
-	    var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
+	    var renderer = PIXI.autoDetectRenderer(width, height,{backgroundColor : 0x1099bb});
 	    document.getElementById("game-div").appendChild(renderer.view);
+
+	    var interactionManager = new PIXI.interaction.InteractionManager(renderer, {
+	        intractionFrequency: 1
+	    });
 
 	    // create the root of the scene graph
 	    var stage = new PIXI.Container();
-
-	    // create a texture from an image path
-	    var texture = PIXI.Texture.fromImage(ASSETS.bunny);
+	    stage.interactive = true;
 
 	    // create a new Sprite using the texture
-	    bunny = new PIXI.Sprite(texture);
-
-	    // center the sprite's anchor point
+	    bunny = new PIXI.Sprite.fromImage(ASSETS.bunny);
 	    bunny.anchor.x = 0.5;
 	    bunny.anchor.y = 0.5;
+	    target = new PIXI.Sprite.fromImage(ASSETS.carrot);
+	    target.scale.x = 1.5;
+	    target.scale.y = 1.5;
+	    target.anchor.x = 0.5;
+	    target.anchor.y = 0.5;
 
 	    // move the sprite to the center of the screen
-	    bunny.position.x = 200;
-	    bunny.root_y = -30;
+	    bunny.x = width / 2;
+	    bunny.y = height / 2;
+	    bunny.unit_y = 0.5;
+	    bunny.true_y = 0.5;  // true_y is including hopping/walking motion
+	    bunny.unit_x = 0.5;
 
 	    stage.addChild(bunny);
+	    stage.addChild(target);
 
-	    // start animating
-	    animate();
+	    // Maintain a single persistent connection
+	    var namespace = '/test';
+	    var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
 
+	    // The initial state, before receiving first message.
+	    var state = new PIXI.Point(0.5, 0.5);
+	    var mouse = new PIXI.Point(0.5, 0.5);
+
+	    stage.on('mousemove', function(e) {
+	        var x = e.data.global.x;
+	        var y = e.data.global.y;
+	        interactionManager.mapPositionToPoint(mouse, x, y);
+	        mouse.x /= width;
+	        // Flip the y axis so that increasing is up
+	        mouse.y = 1 - mouse.y / height;
+	    });
+
+	    socket.on('connect', function(msg) {
+	        console.log('Connected');
+	    });
+
+	    socket.on('state', function(msg) {
+	        // Rescale from [-1, 1] -> [0, 1]
+	        var x = Math.min(Math.max(0, (msg.x + 1) * 0.5), 1);
+	        var y = Math.min(Math.max(0, (msg.y + 1) * 0.5), 1);
+	        state.set(x, y);
+	    });
+
+	    var acc_factor = 0.001;
+	    var x_vel = 0;
+	    var y_vel = 0;
+	    var hopVel = 0;
+	    var hopHeight = 0;
+	    var hopImpulse = 0.007;
+	    var gravity = 0.0008;
+
+	    // Store times in seconds
+	    var then = Date.now() / 1000;
 	    var tick = 0;
+	    var onTarget = false;
 
 	    function animate() {
 	        requestAnimationFrame(animate);
-	        tick += 0.1;
+	        if (!isFinite(mouse.x) || !isFinite(mouse.y)) {
+	            return;
+	        }
 
-	        bunny.root_y += 0.6;
+	        now = Date.now() / 1000;
 
-	        // just for fun, let's rotate mr rabbit a little
-	        bunny.rotation = Math.cos(tick) / 4;
-	        bunny.position.x = 200 + 10 * Math.cos(tick);
-	        bunny.position.y = bunny.root_y + 7 * Math.cos(2 * tick);
-	        bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
+	        var x_acc = mouse.x - bunny.unit_x;
+	        maxVel = Math.min(Math.pow(Math.abs(x_acc), 1.4) * width, 2) / width;
+	        x_vel = clamp(x_vel + x_acc * acc_factor, -maxVel, maxVel);
+
+	        // Screen coordinates increase going down the screen
+	        var y_acc = mouse.y - bunny.unit_y;
+	        maxVel = Math.min(Math.pow(Math.abs(y_acc), 1.4) * height, 2) / height;
+	        y_vel = clamp(y_vel + y_acc * acc_factor, -maxVel, maxVel);
+
+	        // A closure around the 'state', which reflects the last message
+	        // The first several updates are all garbage for some reason, so we
+	        // just keep Mr. Bunny still until the world stabilizes
+	        if (isFinite(state.x)) {
+	            // Actually update position now
+	            bunny.unit_x += x_vel;
+	            bunny.x = bunny.unit_x * width;
+	            target.x = state.x * width;
+	        }
+	        if (isFinite(state.y)) {
+	            bunny.unit_y += y_vel;
+	            bunny.true_y = bunny.unit_y + hopHeight;
+	            bunny.y = (1 - bunny.true_y) * height;
+	            target.y = (1 - state.y) * height;
+	        }
+
+	        // Mr bunny should walk and hop when he moves
+
+	        // Gravity is always on
+	        if (hopHeight <= 0) {
+	            hopHeight = 0;
+	            hopVel = 0;
+	        } else {
+	            hopHeight += hopVel;
+	            hopVel -= gravity;
+	        }
+
+	        var speed = Math.hypot(x_vel, y_vel);
+	        // Stop if not moving
+	        if (speed < 0.0001) {
+	            bunny.rotation *= 0.8;
+	        // Walk if slow
+	        } else if (speed < maxVel) {
+	            bunny.rotation = Math.cos(7 * Math.PI * now) / 8;
+	        // Hop if fast
+	        } else {
+	            end = Math.sign(x_acc) * Math.PI / 15;
+	            bunny.rotation += (end - bunny.rotation) * 0.2;
+	            if (hopHeight === 0) {
+	                hopHeight = hopVel = hopImpulse;
+	            }
+	        }
+
+	        // This carrot is so enticing!
+	        if (onTarget) {
+	            target.rotation *= 0.8;
+	        } else {
+	            target.rotation = Math.sin(2 * Math.PI * now) / 5;
+	        }
+
+
+	        // This is in absolute terms (pixels)
+	        var dist = Math.hypot(
+	            (bunny.unit_x - target.x) * width,
+	            (bunny.unit_y - target.y) * height
+	        );
+	        if (dist < 10) {
+	            if (!onTarget) {
+	                console.log("Target acquired");
+	                onTarget = true;
+	            }
+	        } else {
+	            onTarget = false;
+	        }
 
 	        // render the container
 	        renderer.render(stage);
+	        if (now - then > 5) {
+	            var fps = tick / (now - then);
+	            console.log(Math.round(fps, 0).toString() + " FPS");
+	            then = now;
+	            tick = -1;
+	        }
+	        tick += 1;
 	    }
+
+	    // start animating
+	    animate();
 
 	}
 
@@ -110,6 +242,7 @@
 
 	
 	exports.bunny = 'assets/bunny.png';
+	exports.carrot = 'assets/carrot.png';
 
 
 /***/ },
