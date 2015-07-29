@@ -18,4 +18,4 @@ class Demo(Ball):
 
     def move(self):
         self.frame += 1
-        super(Demo, self).move(sin(self.frame / 2.0), cos(self.frame / 2.0))
+        super(Demo, self).move(0.7 * sin(self.frame / 5.0), 0.7 * cos(self.frame / 10.0))
