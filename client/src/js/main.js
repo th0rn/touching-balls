@@ -69,6 +69,7 @@ function init() {
 
     var then = Date.now();
     var tick = 0;
+    var onTarget = false;
 
     function animate() {
         requestAnimationFrame(animate);
@@ -94,6 +95,19 @@ function init() {
         if (isFinite(state.y)) {
             bunny.position.y += y_vel;
             target.position.y = state.y * height;
+        }
+
+        var dist = Math.hypot(
+            bunny.position.x - target.position.x,
+            bunny.position.y - target.position.y
+        );
+        if (dist < 10) {
+            if (!onTarget) {
+                console.log("Target acquired");
+                onTarget = true;
+            }
+        } else {
+            onTarget = false;
         }
 
         // render the container
