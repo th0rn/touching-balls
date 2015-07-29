@@ -64,10 +64,12 @@ function init() {
 
         target_x = state.x;
         var x_acc = target_x - bunny.position.x / width;
+        maxVel = Math.abs(100 * x_acc * Math.sqrt(Math.abs(x_acc)));
         x_vel = clamp(x_vel + x_acc * acc_factor, -maxVel, maxVel);
 
         target_y = state.y;
         var y_acc = target_y - bunny.position.y / height;
+        maxVel = Math.abs(100 * y_acc * Math.sqrt(Math.abs(y_acc)));
         y_vel = clamp(y_vel + y_acc * acc_factor, -maxVel, maxVel);
 
         // A closure around the 'state', which reflects the last message
