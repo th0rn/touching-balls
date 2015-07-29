@@ -70,7 +70,8 @@ function init() {
     var x_vel = 0;
     var y_vel = 0;
 
-    var then = Date.now();
+    // Store times in seconds
+    var then = Date.now() / 1000;
     var tick = 0;
     var onTarget = false;
 
@@ -115,9 +116,8 @@ function init() {
 
         // render the container
         renderer.render(stage);
-        now = Date.now();
-        if (now - then > 5000) {
-            var fps = tick / (now - then) * 1000;
+        if (now - then > 5) {
+            var fps = tick / (now - then);
             console.log(Math.round(fps, 0).toString() + " FPS");
             then = now;
             tick = -1;
