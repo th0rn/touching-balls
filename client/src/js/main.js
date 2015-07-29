@@ -33,8 +33,11 @@ function init() {
     target.anchor.y = 0.5;
 
     // move the sprite to the center of the screen
-    bunny.position.x = width / 2;
-    bunny.position.y = height / 2;
+    bunny.x = width / 2;
+    bunny.y = height / 2;
+    bunny.unit_y = 0.5;
+    bunny.true_y = 0.5;  // true_y is including hopping/walking motion
+    bunny.unit_x = 0.5;
 
     stage.addChild(bunny);
     stage.addChild(target);
@@ -52,7 +55,8 @@ function init() {
         var y = e.data.global.y;
         interactionManager.mapPositionToPoint(mouse, x, y);
         mouse.x /= width;
-        mouse.y /= height;
+        // Flip the y axis so that increasing is up
+        mouse.y = 1 - mouse.y / height;
     });
 
     socket.on('connect', function(msg) {
@@ -66,9 +70,13 @@ function init() {
         state.set(x, y);
     });
 
-    var acc_factor = 1;
+    var acc_factor = 0.001;
     var x_vel = 0;
     var y_vel = 0;
+    var hopVel = 0;
+    var hopHeight = 0;
+    var hopImpulse = 0.007;
+    var gravity = 0.0008;
 
     // Store times in seconds
     var then = Date.now() / 1000;
@@ -81,29 +89,72 @@ function init() {
             return;
         }
 
-        var x_acc = mouse.x - bunny.position.x / width;
-        maxVel = 5 * Math.pow(Math.abs(x_acc), 0.7);
+        now = Date.now() / 1000;
+
+        var x_acc = mouse.x - bunny.unit_x;
+        maxVel = Math.min(Math.pow(Math.abs(x_acc), 1.4) * width, 2) / width;
         x_vel = clamp(x_vel + x_acc * acc_factor, -maxVel, maxVel);
 
-        var y_acc = mouse.y - bunny.position.y / height;
-        maxVel = 5 * Math.pow(Math.abs(y_acc), 0.7);
+        // Screen coordinates increase going down the screen
+        var y_acc = mouse.y - bunny.unit_y;
+        maxVel = Math.min(Math.pow(Math.abs(y_acc), 1.4) * height, 2) / height;
         y_vel = clamp(y_vel + y_acc * acc_factor, -maxVel, maxVel);
 
         // A closure around the 'state', which reflects the last message
         // The first several updates are all garbage for some reason, so we
         // just keep Mr. Bunny still until the world stabilizes
         if (isFinite(state.x)) {
-            bunny.position.x += x_vel;
-            target.position.x = state.x * width;
+            // Actually update position now
+            bunny.unit_x += x_vel;
+            bunny.x = bunny.unit_x * width;
+            target.x = state.x * width;
         }
         if (isFinite(state.y)) {
-            bunny.position.y += y_vel;
-            target.position.y = state.y * height;
+            bunny.unit_y += y_vel;
+            bunny.true_y = bunny.unit_y + hopHeight;
+            bunny.y = (1 - bunny.true_y) * height;
+            target.y = (1 - state.y) * height;
         }
 
+        // Mr bunny should walk and hop when he moves
+
+        // Gravity is always on
+        if (hopHeight <= 0) {
+            hopHeight = 0;
+            hopVel = 0;
+        } else {
+            hopHeight += hopVel;
+            hopVel -= gravity;
+        }
+
+        var speed = Math.hypot(x_vel, y_vel);
+        // Stop if not moving
+        if (speed < 0.0001) {
+            bunny.rotation *= 0.8;
+        // Walk if slow
+        } else if (speed < maxVel) {
+            bunny.rotation = Math.cos(7 * Math.PI * now) / 8;
+        // Hop if fast
+        } else {
+            end = Math.sign(x_acc) * Math.PI / 15;
+            bunny.rotation += (end - bunny.rotation) * 0.2;
+            if (hopHeight === 0) {
+                hopHeight = hopVel = hopImpulse;
+            }
+        }
+
+        // This carrot is so enticing!
+        if (onTarget) {
+            target.rotation *= 0.8;
+        } else {
+            target.rotation = Math.sin(2 * Math.PI * now) / 5;
+        }
+
+
+        // This is in absolute terms (pixels)
         var dist = Math.hypot(
-            bunny.position.x - target.position.x,
-            bunny.position.y - target.position.y
+            (bunny.unit_x - target.x) * width,
+            (bunny.unit_y - target.y) * height
         );
         if (dist < 10) {
             if (!onTarget) {
