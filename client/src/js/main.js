@@ -14,15 +14,24 @@ function init() {
     var renderer = PIXI.autoDetectRenderer(width, height,{backgroundColor : 0x1099bb});
     document.getElementById("game-div").appendChild(renderer.view);
 
+    var interactionManager = new PIXI.interaction.InteractionManager(renderer, {
+        intractionFrequency: 1
+    });
+
     // create the root of the scene graph
     var stage = new PIXI.Container();
+    stage.interactive = true;
 
     // create a texture from an image path
     var texture = PIXI.Texture.fromImage(ASSETS.bunny);
 
     // create a new Sprite using the texture
     bunny = new PIXI.Sprite(texture);
+    bunny.anchor.x = 0.25;
+    bunny.anchor.y = 0.25;
     target = new PIXI.Sprite(texture);
+    target.anchor.x = 0.5;
+    target.anchor.y = 0.5;
 
     // move the sprite to the center of the screen
     bunny.position.x = width / 2;
@@ -36,40 +45,43 @@ function init() {
     var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
 
     // The initial state, before receiving first message.
-    var state = {x: 0.5, y: 0.5};
+    var state = new PIXI.Point(0.5, 0.5);
+    var mouse = new PIXI.Point(0.5, 0.5);
 
-    socket.on('response', function(msg) {
-        // Derive new state from the message somehow or another
-        state = {
-            x: Math.min(Math.max(0, (msg.x + 1) * 0.5), 1),
-            y: Math.min(Math.max(0, (msg.y + 1) * 0.5), 1),
-        };
+    stage.on('mousemove', function(e) {
+        var x = e.data.global.x;
+        var y = e.data.global.y;
+        interactionManager.mapPositionToPoint(mouse, x, y);
+        mouse.x /= width;
+        mouse.y /= height;
     });
 
-    var maxVel = 5;
-    var acc_factor = 3;
+    socket.on('response', function(msg) {
+        // Rescale from [-1, 1] -> [0, 1]
+        var x = Math.min(Math.max(0, (msg.x + 1) * 0.5), 1);
+        var y = Math.min(Math.max(0, (msg.y + 1) * 0.5), 1);
+        state.set(x, y);
+    });
+
+    var acc_factor = 1;
     var x_vel = 0;
     var y_vel = 0;
-    var target_x = state.x;
-    var target_y = state.y;
 
     var then = Date.now();
     var tick = 0;
 
     function animate() {
         requestAnimationFrame(animate);
-        if (!isFinite(state.x) || !isFinite(state.y)) {
+        if (!isFinite(mouse.x) || !isFinite(mouse.y)) {
             return;
         }
 
-        target_x = state.x;
-        var x_acc = target_x - bunny.position.x / width;
-        maxVel = Math.abs(100 * x_acc * Math.sqrt(Math.abs(x_acc)));
+        var x_acc = mouse.x - bunny.position.x / width;
+        maxVel = 5 * Math.pow(Math.abs(x_acc), 0.7);
         x_vel = clamp(x_vel + x_acc * acc_factor, -maxVel, maxVel);
 
-        target_y = state.y;
-        var y_acc = target_y - bunny.position.y / height;
-        maxVel = Math.abs(100 * y_acc * Math.sqrt(Math.abs(y_acc)));
+        var y_acc = mouse.y - bunny.position.y / height;
+        maxVel = 5 * Math.pow(Math.abs(y_acc), 0.7);
         y_vel = clamp(y_vel + y_acc * acc_factor, -maxVel, maxVel);
 
         // A closure around the 'state', which reflects the last message
