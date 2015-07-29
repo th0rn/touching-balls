@@ -33,19 +33,17 @@ def background_thread():
     """Demo ball."""
     ball = Demo()
     while True:
-        time.sleep(1)
+        time.sleep(0.5)
         ball.move()
         data = 'Player "%s" (%s) moved to %s.' % (ball.nick, ball.color,
                                                   ball.short_coords())
-        socketio.emit('response',
-                      {
-                          # 'data': data,
-                          'nick': ball.nick,
-                          'x': ball.x,
-                          'y': ball.y,
-                          # 'count': count,
-                      },
-                      namespace='/test')
+        payload = {
+            'data': data,
+            'nick': ball.nick,
+            'x': ball.x,
+            'y': ball.y,
+        }
+        socketio.emit('state', payload, namespace='/test')
 
 
 @app.route('/')

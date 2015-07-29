@@ -56,7 +56,11 @@ function init() {
         mouse.y /= height;
     });
 
-    socket.on('response', function(msg) {
+    socket.on('connect', function(msg) {
+        console.log('Connected');
+    });
+
+    socket.on('state', function(msg) {
         // Rescale from [-1, 1] -> [0, 1]
         var x = Math.min(Math.max(0, (msg.x + 1) * 0.5), 1);
         var y = Math.min(Math.max(0, (msg.y + 1) * 0.5), 1);
