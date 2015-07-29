@@ -7,9 +7,9 @@
 
 ### Server-side
 
-- Websockets
-- Ball
-- Simulated ball movement (positions)
+- [x] Websockets
+- [x] Ball
+- [x] Simulated ball movement (positions)
 
     pip install -r requirements.txt
     python core/hello.py
@@ -17,8 +17,8 @@
 
 ### Client-side
 
-- Websockets
-- Rendering ball in position (canvas)
+- [x] Websockets
+- [ ] Rendering ball in position (canvas)
 
   Install [npm.](http://npmjs.org)
 

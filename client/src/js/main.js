@@ -3,50 +3,130 @@ var PIXI = require("pixi");
 var ASSETS = require("./assets.js");
 require('../css/style.css');
 
+var width = 800;
+var height = 600;
+
+function clamp(x, low, high) {
+    return Math.max(low, Math.min(x, high));
+}
+
 function init() {
-    var renderer = PIXI.autoDetectRenderer(800, 600,{backgroundColor : 0x1099bb});
+    var renderer = PIXI.autoDetectRenderer(width, height,{backgroundColor : 0x1099bb});
     document.getElementById("game-div").appendChild(renderer.view);
+
+    var interactionManager = new PIXI.interaction.InteractionManager(renderer, {
+        intractionFrequency: 1
+    });
 
     // create the root of the scene graph
     var stage = new PIXI.Container();
-
-    // create a texture from an image path
-    var texture = PIXI.Texture.fromImage(ASSETS.bunny);
+    stage.interactive = true;
 
     // create a new Sprite using the texture
-    bunny = new PIXI.Sprite(texture);
-
-    // center the sprite's anchor point
-    bunny.anchor.x = 0.5;
-    bunny.anchor.y = 0.5;
+    bunny = new PIXI.Sprite.fromImage(ASSETS.bunny);
+    bunny.anchor.x = 0.25;
+    bunny.anchor.y = 0.25;
+    target = new PIXI.Sprite.fromImage(ASSETS.carrot);
+    target.scale.x = 1.5;
+    target.scale.y = 1.5;
+    target.anchor.x = 0.5;
+    target.anchor.y = 0.5;
 
     // move the sprite to the center of the screen
-    bunny.position.x = 200;
-    bunny.root_y = -30;
+    bunny.position.x = width / 2;
+    bunny.position.y = height / 2;
 
     stage.addChild(bunny);
+    stage.addChild(target);
 
+    // Maintain a single persistent connection
+    var namespace = '/test';
+    var socket = io.connect('http://' + document.domain + ':' + 5000 + namespace);
+
+    // The initial state, before receiving first message.
+    var state = new PIXI.Point(0.5, 0.5);
+    var mouse = new PIXI.Point(0.5, 0.5);
+
+    stage.on('mousemove', function(e) {
+        var x = e.data.global.x;
+        var y = e.data.global.y;
+        interactionManager.mapPositionToPoint(mouse, x, y);
+        mouse.x /= width;
+        mouse.y /= height;
+    });
+
+    socket.on('connect', function(msg) {
+        console.log('Connected');
+    });
+
+    socket.on('state', function(msg) {
+        // Rescale from [-1, 1] -> [0, 1]
+        var x = Math.min(Math.max(0, (msg.x + 1) * 0.5), 1);
+        var y = Math.min(Math.max(0, (msg.y + 1) * 0.5), 1);
+        state.set(x, y);
+    });
+
+    var acc_factor = 1;
+    var x_vel = 0;
+    var y_vel = 0;
+
+    var then = Date.now();
     var tick = 0;
-
-    // start animating
-    animate();
+    var onTarget = false;
 
     function animate() {
         requestAnimationFrame(animate);
-        tick += 0.1;
+        if (!isFinite(mouse.x) || !isFinite(mouse.y)) {
+            return;
+        }
 
-        bunny.root_y += 0.6;
+        var x_acc = mouse.x - bunny.position.x / width;
+        maxVel = 5 * Math.pow(Math.abs(x_acc), 0.7);
+        x_vel = clamp(x_vel + x_acc * acc_factor, -maxVel, maxVel);
 
-        // "Walk" down the screen
-        bunny.rotation = Math.cos(tick) / 4;
-        bunny.position.x = 200 + 10 * Math.cos(tick);
-        bunny.position.y = bunny.root_y + 7 * Math.cos(2 * tick);
-        // Wrap the y-axis
-        bunny.root_y = bunny.root_y > 630 ? -30 : bunny.root_y;
+        var y_acc = mouse.y - bunny.position.y / height;
+        maxVel = 5 * Math.pow(Math.abs(y_acc), 0.7);
+        y_vel = clamp(y_vel + y_acc * acc_factor, -maxVel, maxVel);
+
+        // A closure around the 'state', which reflects the last message
+        // The first several updates are all garbage for some reason, so we
+        // just keep Mr. Bunny still until the world stabilizes
+        if (isFinite(state.x)) {
+            bunny.position.x += x_vel;
+            target.position.x = state.x * width;
+        }
+        if (isFinite(state.y)) {
+            bunny.position.y += y_vel;
+            target.position.y = state.y * height;
+        }
+
+        var dist = Math.hypot(
+            bunny.position.x - target.position.x,
+            bunny.position.y - target.position.y
+        );
+        if (dist < 10) {
+            if (!onTarget) {
+                console.log("Target acquired");
+                onTarget = true;
+            }
+        } else {
+            onTarget = false;
+        }
 
         // render the container
         renderer.render(stage);
+        now = Date.now();
+        if (now - then > 5000) {
+            var fps = tick / (now - then) * 1000;
+            console.log(Math.round(fps, 0).toString() + " FPS");
+            then = now;
+            tick = -1;
+        }
+        tick += 1;
     }
+
+    // start animating
+    animate();
 
 }
 
