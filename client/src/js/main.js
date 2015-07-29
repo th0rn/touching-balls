@@ -24,8 +24,8 @@ function init() {
 
     // create a new Sprite using the texture
     bunny = new PIXI.Sprite.fromImage(ASSETS.bunny);
-    bunny.anchor.x = 0.25;
-    bunny.anchor.y = 0.25;
+    bunny.anchor.x = 0.5;
+    bunny.anchor.y = 0.5;
     target = new PIXI.Sprite.fromImage(ASSETS.carrot);
     target.scale.x = 1.5;
     target.scale.y = 1.5;
