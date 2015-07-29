@@ -50,10 +50,6 @@ def background_thread():
 
 @app.route('/')
 def index():
-    global thread
-    if thread is None:
-        thread = Thread(target=background_thread)
-        thread.start()
     return render_template('index.html')
 
 
@@ -70,6 +66,10 @@ def test_broadcast(message):
 @socketio.on('connect', namespace='/test')
 def test_connect():
     emit('response', {'data': 'Connected'})
+    global thread
+    if thread is None:
+        thread = Thread(target=background_thread)
+        thread.start()
 
 
 @socketio.on('disconnect request', namespace='/test')
